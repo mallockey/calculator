@@ -20,4 +20,10 @@ typedef struct
     Operation *current_op_ptr;
 } OperationData;
 
+typedef char *OperatorStackItem;
+
+typedef OperatorStackItem *OperatorStack;
+
+OperatorStack create_operator_stack(int size);
+
 #endif

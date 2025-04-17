@@ -1,4 +1,5 @@
 #include "common.h"
+#include "stdlib.h"
 
 char *operation_to_string(Operation op)
 {
@@ -19,4 +20,9 @@ char *operation_to_string(Operation op)
     default:
         return "";
     }
+}
+
+OperatorStack create_operator_stack(int size)
+{
+    return malloc(sizeof(OperatorStackItem) * size);
 }

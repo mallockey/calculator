@@ -22,6 +22,35 @@ int update_running_formula(GtkWidget *widget, gpointer data)
   GtkEntryBuffer *buffer = gtk_entry_get_buffer(GTK_ENTRY(running_formula));
   const char *current_text = gtk_entry_buffer_get_text(buffer);
 
+  Operation list_of_operations[5] = {OP_ADD, OP_DIVIDE, OP_EQUALS, OP_SUBTRACT, OP_MULTIPLY};
+
+  int is_added_operator = 0;
+  int is_last_char_operator = 0;
+
+  if (strlen(current_text) > 0)
+  {
+    char last_of_current_text = current_text[strlen(current_text) - 1];
+
+    // Turn last character into a proper null-terminated string
+    char last_char_str[2] = {last_of_current_text, '\0'};
+
+    for (int i = 0; i < sizeof(list_of_operations) / sizeof(list_of_operations[0]); i++)
+    {
+      char *op_string = operation_to_string(list_of_operations[i]);
+
+      if (strncmp(op_string, text_to_add, 1) == 0)
+        is_added_operator = 1;
+
+      if (strncmp(op_string, last_char_str, 1) == 0)
+        is_last_char_operator = 1;
+    }
+  }
+
+  if (is_added_operator && is_last_char_operator)
+  {
+    return 1; // Don't add the new operator
+  }
+
   // If backspace and there is nothing in the current text, nothing to do
   if (strlen(current_text) == 0 && strncmp(text_to_add, "<-", 2) == 0)
   {

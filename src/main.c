@@ -91,6 +91,8 @@ static void activate(GtkApplication *app, gpointer user_data)
     add_operation_button(operations_box, OP_EQUALS, &current_operation);
     add_operation_button(operations_box, OP_BACKSPACE, &current_operation);
 
+    OperatorStack my_test = create_operator_stack(1);
+
     gtk_widget_show_all(window);
 }
 
