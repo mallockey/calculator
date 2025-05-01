@@ -1,6 +1,9 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include <stddef.h>
+#include <gtk/gtktypes.h>
+
 typedef enum
 {
     OP_NONE,
@@ -9,21 +12,43 @@ typedef enum
     OP_MULTIPLY,
     OP_DIVIDE,
     OP_EQUALS,
-    OP_BACKSPACE
-} Operation;
-
-char *operation_to_string(Operation op);
+    OP_BACKSPACE,
+    NUM_0,
+    NUM_1,
+    NUM_2,
+    NUM_3,
+    NUM_4,
+    NUM_5,
+    NUM_6,
+    NUM_7,
+    NUM_8,
+    NUM_9
+} CalcInput;
 
 typedef struct
 {
-    Operation op;
-    Operation *current_op_ptr;
+    CalcInput op;
+    CalcInput *current_op_ptr;
+    GtkWidget *running_formula;
 } OperationData;
 
-typedef char *OperatorStackItem;
+char *operation_to_string(CalcInput op);
 
-typedef OperatorStackItem *OperatorStack;
+typedef char *StackItem;
 
-OperatorStack create_operator_stack(int size);
+typedef StackItem *Stack;
+
+typedef struct
+{
+    Stack stack;
+    size_t top;
+    size_t capacity;
+} StackData;
+
+StackData create_operation_data(int size);
+
+StackData push(StackData operation_data, StackItem operator_stack_item);
+
+StackItem pop(StackData operation_data);
 
 #endif

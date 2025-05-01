@@ -2,17 +2,15 @@
 #include <stdbool.h>
 #include <common.h>
 
-static GtkWidget *sum_label;
-static GtkWidget *running_formula;
-
 static float running_sum = 0;
 
-void clear_calculator()
+void clear_calculator(GtkWidget *widget, gpointer user_data)
 {
+  GtkWidget *running_formula = GTK_WIDGET(user_data);
   gtk_entry_set_text(GTK_ENTRY(running_formula), "");
 }
 
-int update_running_formula(GtkWidget *widget, gpointer data)
+int update_running_formula(GtkWidget *widget, gpointer data, GtkWidget *running_formula)
 {
   const char *text_to_add = (const char *)data;
 
@@ -22,7 +20,7 @@ int update_running_formula(GtkWidget *widget, gpointer data)
   GtkEntryBuffer *buffer = gtk_entry_get_buffer(GTK_ENTRY(running_formula));
   const char *current_text = gtk_entry_buffer_get_text(buffer);
 
-  Operation list_of_operations[5] = {OP_ADD, OP_DIVIDE, OP_EQUALS, OP_SUBTRACT, OP_MULTIPLY};
+  CalcInput list_of_operations[5] = {OP_ADD, OP_DIVIDE, OP_EQUALS, OP_SUBTRACT, OP_MULTIPLY};
 
   int is_added_operator = 0;
   int is_last_char_operator = 0;
@@ -84,10 +82,10 @@ void set_current_operation(GtkWidget *widget, gpointer user_data)
   *(data->current_op_ptr) = data->op;
 
   const char *text_to_add = operation_to_string(data->op);
-  update_running_formula(widget, (gpointer)text_to_add);
+  update_running_formula(widget, (gpointer)text_to_add, data->running_formula);
 }
 
-void calc_value(GtkWidget *entry)
+void calc_value(GtkWidget *entry, GtkWidget *sum_label)
 {
   const gchar *text = gtk_entry_get_text(GTK_ENTRY(entry));
   float value = atof(text);
@@ -100,17 +98,16 @@ void calc_value(GtkWidget *entry)
   gtk_label_set_text(GTK_LABEL(sum_label), buffer);
 }
 
-void add_input(GtkWidget *container, const char *place_holder)
+void add_input(GtkWidget *container, const char *place_holder, GtkWidget *sum_label, GtkWidget *running_formula)
 {
-  running_formula = gtk_entry_new();
   gtk_entry_set_placeholder_text(GTK_ENTRY(running_formula), "Type here...");
-  g_signal_connect(running_formula, "activate", G_CALLBACK(calc_value), NULL);
+  g_signal_connect(running_formula, "activate", G_CALLBACK(calc_value), sum_label);
   sum_label = gtk_label_new("0.00");
   gtk_container_add(GTK_CONTAINER(container), sum_label);
   gtk_container_add(GTK_CONTAINER(container), running_formula);
 }
 
-void add_clear_button(GtkWidget *container)
+void add_clear_button(GtkWidget *container, GtkWidget *running_formula)
 {
   GtkWidget *button;
   GtkWidget *button_box;
@@ -122,13 +119,17 @@ void add_clear_button(GtkWidget *container)
   gtk_container_add(GTK_CONTAINER(button_box), button);
 
   // Connect signals to the button
-  g_signal_connect(button, "clicked", G_CALLBACK(clear_calculator), NULL);
+  g_signal_connect(button, "clicked", G_CALLBACK(clear_calculator), running_formula);
 
   // Add the button box to the container (GtkBox)
   gtk_container_add(GTK_CONTAINER(container), button_box);
 }
 
-void add_operation_button(GtkWidget *container, Operation op, Operation *current_operation)
+static void handles_equals()
+{
+}
+
+void add_operation_button(GtkWidget *container, CalcInput op, CalcInput *current_operation, GtkWidget *running_formula)
 {
   GtkWidget *button;
   GtkWidget *button_box;
@@ -145,29 +146,10 @@ void add_operation_button(GtkWidget *container, Operation op, Operation *current
   OperationData *data = malloc(sizeof(OperationData));
   data->op = op;
   data->current_op_ptr = current_operation;
+  data->running_formula = running_formula;
 
   // Connect signal with packed data
   g_signal_connect(button, "clicked", G_CALLBACK(set_current_operation), data);
-
-  // Add the button box to the container (GtkBox)
-  gtk_container_add(GTK_CONTAINER(container), button_box);
-}
-
-void add_num_button(GtkWidget *container, char *label)
-{
-  GtkWidget *button;
-  GtkWidget *button_box;
-
-  // Create a button and a button box
-  button = gtk_button_new_with_label(label);
-  button_box = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
-
-  // Add the button to the button box
-  gtk_container_add(GTK_CONTAINER(button_box), button);
-
-  // Connect signals to the button
-  // g_print("%s", label);
-  g_signal_connect(button, "clicked", G_CALLBACK(update_running_formula), label);
 
   // Add the button box to the container (GtkBox)
   gtk_container_add(GTK_CONTAINER(container), button_box);
