@@ -25,15 +25,6 @@ typedef enum
     NUM_9
 } CalcInput;
 
-typedef struct
-{
-    CalcInput op;
-    CalcInput *current_op_ptr;
-    GtkWidget *running_formula;
-} OperationData;
-
-char *operation_to_string(CalcInput op);
-
 typedef char *StackItem;
 
 typedef StackItem *Stack;
@@ -44,6 +35,17 @@ typedef struct
     size_t top;
     size_t capacity;
 } StackData;
+
+typedef struct
+{
+    CalcInput op;
+    CalcInput *current_op_ptr;
+    GtkWidget *running_formula;
+    StackData *output_data;
+    StackData *operation_data;
+} OperationData;
+
+char *operation_to_string(CalcInput op);
 
 StackData create_operation_data(int size);
 

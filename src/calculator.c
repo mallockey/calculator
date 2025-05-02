@@ -10,14 +10,16 @@ void clear_calculator(GtkWidget *widget, gpointer user_data)
   gtk_entry_set_text(GTK_ENTRY(running_formula), "");
 }
 
-int update_running_formula(GtkWidget *widget, gpointer data, GtkWidget *running_formula)
+int update_running_formula(GtkWidget *widget, gpointer data, OperationData *operation_data)
 {
+  // OperationData *data = (OperationData *)operation_data;
+  // *(data->current_op_ptr) = data->op;
   const char *text_to_add = (const char *)data;
 
   bool should_remove = false;
 
   // Get current entry text
-  GtkEntryBuffer *buffer = gtk_entry_get_buffer(GTK_ENTRY(running_formula));
+  GtkEntryBuffer *buffer = gtk_entry_get_buffer(GTK_ENTRY(operation_data->running_formula));
   const char *current_text = gtk_entry_buffer_get_text(buffer);
 
   CalcInput list_of_operations[5] = {OP_ADD, OP_DIVIDE, OP_EQUALS, OP_SUBTRACT, OP_MULTIPLY};
@@ -71,18 +73,25 @@ int update_running_formula(GtkWidget *widget, gpointer data, GtkWidget *running_
     snprintf(updated_text, sizeof(updated_text), "%s%s", current_text, text_to_add);
   }
 
-  gtk_entry_set_text(GTK_ENTRY(running_formula), updated_text);
+  printf("The current char is: %c\n", current_text);
+
+  for (int i = 0; i < strlen(text_to_add); i++)
+  {
+    printf("The updated text char is: %c\n", text_to_add[i]);
+  }
+
+  gtk_entry_set_text(GTK_ENTRY(operation_data->running_formula), updated_text);
 
   return 0;
 }
 
-void set_current_operation(GtkWidget *widget, gpointer user_data)
+void set_current_operation(GtkWidget *widget, gpointer operation_data)
 {
-  OperationData *data = (OperationData *)user_data;
+  OperationData *data = (OperationData *)operation_data;
   *(data->current_op_ptr) = data->op;
 
   const char *text_to_add = operation_to_string(data->op);
-  update_running_formula(widget, (gpointer)text_to_add, data->running_formula);
+  update_running_formula(widget, (gpointer)text_to_add, data);
 }
 
 void calc_value(GtkWidget *entry, GtkWidget *sum_label)
@@ -129,7 +138,7 @@ static void handles_equals()
 {
 }
 
-void add_operation_button(GtkWidget *container, CalcInput op, CalcInput *current_operation, GtkWidget *running_formula)
+void add_operation_button(GtkWidget *container, CalcInput op, CalcInput *current_operation, GtkWidget *running_formula, StackData *operation_data, StackData *output_data)
 {
   GtkWidget *button;
   GtkWidget *button_box;
@@ -147,6 +156,8 @@ void add_operation_button(GtkWidget *container, CalcInput op, CalcInput *current
   data->op = op;
   data->current_op_ptr = current_operation;
   data->running_formula = running_formula;
+  data->operation_data = operation_data;
+  data->output_data = output_data;
 
   // Connect signal with packed data
   g_signal_connect(button, "clicked", G_CALLBACK(set_current_operation), data);
