@@ -10,16 +10,16 @@ void clear_calculator(GtkWidget *widget, gpointer user_data)
   gtk_entry_set_text(GTK_ENTRY(running_formula), "");
 }
 
-int update_running_formula(GtkWidget *widget, gpointer data, OperationData *operation_data)
+int handle_button_click(GtkWidget *widget, gpointer user_data)
 {
-  // OperationData *data = (OperationData *)operation_data;
-  // *(data->current_op_ptr) = data->op;
-  const char *text_to_add = (const char *)data;
+  ButtonClickHandlerParams *data = (ButtonClickHandlerParams *)user_data;
+
+  const char *text_to_add = &data->op;
 
   bool should_remove = false;
 
   // Get current entry text
-  GtkEntryBuffer *buffer = gtk_entry_get_buffer(GTK_ENTRY(operation_data->running_formula));
+  GtkEntryBuffer *buffer = gtk_entry_get_buffer(GTK_ENTRY(data->running_formula));
   const char *current_text = gtk_entry_buffer_get_text(buffer);
 
   CalcInput list_of_operations[5] = {OP_ADD, OP_DIVIDE, OP_EQUALS, OP_SUBTRACT, OP_MULTIPLY};
@@ -52,7 +52,7 @@ int update_running_formula(GtkWidget *widget, gpointer data, OperationData *oper
   }
 
   // If backspace and there is nothing in the current text, nothing to do
-  if (strlen(current_text) == 0 && strncmp(text_to_add, "<-", 2) == 0)
+  if (strlen(current_text) == 0 && strncmp(text_to_add, operation_to_string(OP_BACKSPACE), 2) == 0)
   {
     return 1;
   }
@@ -67,31 +67,66 @@ int update_running_formula(GtkWidget *widget, gpointer data, OperationData *oper
   if (should_remove)
   {
     snprintf(updated_text, strlen(current_text), "%s", current_text);
+    pop(data->temp_num_stack);
   }
   else
   {
+
+    if (!is_added_operator)
+    {
+      push(data->temp_num_stack, *text_to_add);
+    }
+
     snprintf(updated_text, sizeof(updated_text), "%s%s", current_text, text_to_add);
   }
 
-  printf("The current char is: %c\n", current_text);
-
-  for (int i = 0; i < strlen(text_to_add); i++)
+  if (is_added_operator)
   {
-    printf("The updated text char is: %c\n", text_to_add[i]);
+
+    char dest[100];
+    char num_buf[100];
+
+    for (int i = 0; i < data->temp_num_stack->top; i++)
+    {
+      num_buf[i] = data->temp_num_stack->stack[i];
+    }
+
+    strcpy(dest, num_buf);
+
+    StackItem top = data->operation_stack->stack[data->operation_stack->top - 1];
+
+    if (data->operation_stack->top == 0 || get_precedence((CalcInput)top, *text_to_add) == LOWER)
+    {
+      push(data->operation_stack, *text_to_add);
+    }
+    else
+    {
+      while (data->operation_stack->top > 0)
+      {
+        StackItem top = data->operation_stack->stack[data->operation_stack->top - 1];
+        if (get_precedence((CalcInput)top, *text_to_add) == LOWER)
+          break;
+
+        StackItem popped = pop(data->operation_stack);
+
+        const char *str = operation_to_string((CalcInput)popped);
+        printf("My STR: %c\n", popped);
+        push_output_stack(data->output_stack, str);
+      }
+
+      printf("%s text to add,", text_to_add);
+      push(data->operation_stack, *text_to_add);
+    }
+
+    while (data->temp_num_stack->top > 0)
+    {
+      pop(data->temp_num_stack);
+    }
   }
 
-  gtk_entry_set_text(GTK_ENTRY(operation_data->running_formula), updated_text);
+  gtk_entry_set_text(GTK_ENTRY(data->running_formula), updated_text);
 
   return 0;
-}
-
-void set_current_operation(GtkWidget *widget, gpointer operation_data)
-{
-  OperationData *data = (OperationData *)operation_data;
-  *(data->current_op_ptr) = data->op;
-
-  const char *text_to_add = operation_to_string(data->op);
-  update_running_formula(widget, (gpointer)text_to_add, data);
 }
 
 void calc_value(GtkWidget *entry, GtkWidget *sum_label)
@@ -138,30 +173,31 @@ static void handles_equals()
 {
 }
 
-void add_operation_button(GtkWidget *container, CalcInput op, CalcInput *current_operation, GtkWidget *running_formula, StackData *operation_data, StackData *output_data)
+void add_operation_button(GtkWidget *container, CalcInput op, OperationData *data)
 {
   GtkWidget *button;
   GtkWidget *button_box;
 
-  // Create a button and a button box
   const char *operation_label = operation_to_string(op);
   button = gtk_button_new_with_label(operation_label);
   button_box = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
-
-  // Add the button to the button box
   gtk_container_add(GTK_CONTAINER(button_box), button);
+  gtk_container_add(GTK_CONTAINER(container), button_box); // don't forget to pack the button box!
 
-  // Allocate and fill data
-  OperationData *data = malloc(sizeof(OperationData));
-  data->op = op;
-  data->current_op_ptr = current_operation;
-  data->running_formula = running_formula;
-  data->operation_data = operation_data;
-  data->output_data = output_data;
+  ButtonClickHandlerParams *button_handle_click = malloc(sizeof(ButtonClickHandlerParams));
+  if (!button_handle_click)
+  {
+    fprintf(stderr, "Failed to allocate ButtonClickHandlerParams\n");
+    return;
+  }
 
-  // Connect signal with packed data
-  g_signal_connect(button, "clicked", G_CALLBACK(set_current_operation), data);
+  button_handle_click->op = operation_label[0];
 
-  // Add the button box to the container (GtkBox)
-  gtk_container_add(GTK_CONTAINER(container), button_box);
+  button_handle_click->operation_stack = data->operation_stack;
+  button_handle_click->output_stack = data->output_stack;
+  button_handle_click->running_formula = data->running_formula;
+  button_handle_click->temp_num_stack = data->temp_num_stack;
+  button_handle_click->token_stack = data->token_stack;
+
+  g_signal_connect(button, "clicked", G_CALLBACK(handle_button_click), button_handle_click);
 }

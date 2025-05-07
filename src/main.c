@@ -26,10 +26,14 @@ static void activate(GtkApplication *app, gpointer user_data)
 
     GtkWidget *operations_box;
 
-    StackData operation_data = create_operation_data(2);
-    StackData output_data = create_operation_data(2);
-
+    OperationData operation_data;
     running_formula = gtk_entry_new();
+
+    operation_data.running_formula = running_formula;
+    operation_data.operation_stack = create_stack(2);
+    operation_data.output_stack = create_output_stack(2);
+    operation_data.token_stack = create_stack(2);
+    operation_data.temp_num_stack = create_stack(2);
 
     window = gtk_application_window_new(app);
     gtk_window_set_title(GTK_WINDOW(window), "Calculator");
@@ -64,23 +68,23 @@ static void activate(GtkApplication *app, gpointer user_data)
     box1 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_box_pack_start(GTK_BOX(left_side_child_box), box1, FALSE, FALSE, 0);
 
-    add_operation_button(box1, NUM_7, &current_operation, running_formula, &operation_data, &output_data);
-    add_operation_button(box1, NUM_8, &current_operation, running_formula, &operation_data, &output_data);
-    add_operation_button(box1, NUM_9, &current_operation, running_formula, &operation_data, &output_data);
+    add_operation_button(box1, NUM_7, &operation_data);
+    add_operation_button(box1, NUM_8, &operation_data);
+    add_operation_button(box1, NUM_9, &operation_data);
 
     box2 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_box_pack_start(GTK_BOX(left_side_child_box), box2, FALSE, FALSE, 0);
 
-    add_operation_button(box2, NUM_4, &current_operation, running_formula, &operation_data, &output_data);
-    add_operation_button(box2, NUM_5, &current_operation, running_formula, &operation_data, &output_data);
-    add_operation_button(box2, NUM_6, &current_operation, running_formula, &operation_data, &output_data);
+    add_operation_button(box2, NUM_4, &operation_data);
+    add_operation_button(box2, NUM_5, &operation_data);
+    add_operation_button(box2, NUM_6, &operation_data);
 
     box3 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_box_pack_start(GTK_BOX(left_side_child_box), box3, FALSE, FALSE, 0);
 
-    add_operation_button(box3, NUM_1, &current_operation, running_formula, &operation_data, &output_data);
-    add_operation_button(box3, NUM_2, &current_operation, running_formula, &operation_data, &output_data);
-    add_operation_button(box3, NUM_3, &current_operation, running_formula, &operation_data, &output_data);
+    add_operation_button(box3, NUM_1, &operation_data);
+    add_operation_button(box3, NUM_2, &operation_data);
+    add_operation_button(box3, NUM_3, &operation_data);
 
     clear_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_box_pack_start(GTK_BOX(right_side_child_box), clear_box, FALSE, FALSE, 0);
@@ -89,17 +93,21 @@ static void activate(GtkApplication *app, gpointer user_data)
     operations_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_box_pack_start(GTK_BOX(right_side_child_box), operations_box, FALSE, FALSE, 0);
 
-    add_operation_button(operations_box, OP_BACKSPACE, &current_operation, running_formula, &operation_data, &output_data);
-    add_operation_button(operations_box, OP_DIVIDE, &current_operation, running_formula, &operation_data, &output_data);
-    add_operation_button(operations_box, OP_MULTIPLY, &current_operation, running_formula, &operation_data, &output_data);
-    add_operation_button(operations_box, OP_SUBTRACT, &current_operation, running_formula, &operation_data, &output_data);
-    add_operation_button(operations_box, OP_ADD, &current_operation, running_formula, &operation_data, &output_data);
-    add_operation_button(operations_box, OP_EQUALS, &current_operation, running_formula, &operation_data, &output_data);
+    add_operation_button(operations_box, OP_BACKSPACE, &operation_data);
+    add_operation_button(operations_box, OP_DIVIDE, &operation_data);
+    add_operation_button(operations_box, OP_MULTIPLY, &operation_data);
+    add_operation_button(operations_box, OP_SUBTRACT, &operation_data);
+    add_operation_button(operations_box, OP_ADD, &operation_data);
+    add_operation_button(operations_box, OP_EQUALS, &operation_data);
 
     gtk_widget_show_all(window);
 
-    free(output_data.stack);
-    free(operation_data.stack);
+    // free(operation_data.operation_stack);
+    // free(operation_data.output_stack);
+    // free(operation_data.temp_num_stack);
+    // free(operation_data.token_stack);
+    // free(output_data.stack);
+    // free(operation_data.stack);
 }
 
 int main(int argc, char **argv)

@@ -16,7 +16,7 @@ char *operation_to_string(CalcInput op)
     case OP_EQUALS:
         return "=";
     case OP_BACKSPACE:
-        return "<-";
+        return "<";
     case NUM_0:
         return "0";
     case NUM_1:
@@ -42,58 +42,111 @@ char *operation_to_string(CalcInput op)
     }
 }
 
-Stack create_operator_stack(int size)
+StackData *create_stack(int size)
 {
-    Stack operator_stack = malloc(sizeof(Stack) * size);
+    StackData *stack_data = malloc(sizeof(StackData));
 
-    if (operator_stack == NULL)
-    {
-    }
+    stack_data->stack = malloc(sizeof(StackItem) * size); // properly initialize
+    stack_data->top = 0;
+    stack_data->capacity = size;
 
-    return operator_stack;
+    return stack_data;
 }
 
-StackData create_operation_data(int size)
+OutputStackData *create_output_stack(int size)
 {
-    StackData operation_data;
+    OutputStackData *stack_data = malloc(sizeof(OutputStackData));
 
-    operation_data.stack = create_operator_stack(size); // properly initialize
-    operation_data.top = 0;
-    operation_data.capacity = size;
+    stack_data->stack = malloc(sizeof(OutputStack) * size);
+    stack_data->capacity = size;
 
-    return operation_data;
+    return stack_data;
 }
 
-StackData push(StackData operation_data, StackItem operator_stack_item)
+void push(StackData *stack_data, StackItem operator_stack_item)
 {
     // Resize if needed
-    if (operation_data.top >= operation_data.capacity)
+    if (stack_data->top >= stack_data->capacity)
     {
-        size_t new_capacity = operation_data.capacity * 2;
-        Stack new_stack = realloc(operation_data.stack, sizeof(StackItem) * new_capacity);
+        size_t new_capacity = stack_data->capacity * 2;
+        Stack new_stack = realloc(stack_data->stack, sizeof(StackItem) * new_capacity);
         if (new_stack == NULL)
         {
-            // Handle allocation failure (for now just return unchanged)
-            return operation_data;
+            // Allocation failed; return without modifying
+            fprintf(stderr, "Error: realloc failed\n");
+            return;
         }
-        operation_data.stack = new_stack;
-        operation_data.capacity = new_capacity;
+        stack_data->stack = new_stack;
+        stack_data->capacity = new_capacity;
     }
 
-    operation_data.stack[operation_data.top++] = operator_stack_item;
-    return operation_data;
+    stack_data->stack[stack_data->top++] = operator_stack_item;
 }
 
-StackItem pop(StackData operation_data)
+StackItem pop(StackData *stack_data)
 {
-    if (operation_data.top == 0)
+    if (stack_data->top == 0)
     {
         exit(1);
     }
 
-    operation_data.top--;
-    StackItem item = operation_data.stack[operation_data.top];
-    operation_data.stack[operation_data.top] = NULL;
+    stack_data->top--;
+    StackItem item = stack_data->stack[stack_data->top];
+    stack_data->stack[stack_data->top] = '\0';
 
     return item;
+}
+
+void push_output_stack(OutputStackData *stack_data, const char *token)
+{
+    if (stack_data->top >= stack_data->capacity)
+    {
+        size_t new_capacity = stack_data->capacity * 2;
+        OutputStack new_stack = realloc(stack_data->stack, sizeof(OutputStackItem) * new_capacity);
+        if (!new_stack)
+        {
+            fprintf(stderr, "Error: realloc failed\n");
+            return;
+        }
+        stack_data->stack = new_stack;
+        stack_data->capacity = new_capacity;
+    }
+
+    stack_data->stack[stack_data->top++] = strdup(token); // Make a copy of the token
+}
+
+OutputStackItem pop_output_stack(OutputStackData *stack_data)
+{
+    if (stack_data->top == 0)
+    {
+        exit(1);
+    }
+
+    stack_data->top--;
+    OutputStackItem item = stack_data->stack[stack_data->top];
+    stack_data->stack[stack_data->top] = NULL;
+
+    return item;
+}
+
+int precedence(CalcInput op)
+{
+    if (strncmp((char *)&op, operation_to_string(OP_MULTIPLY), 2) == 0 || strncmp((char *)&op, operation_to_string(OP_DIVIDE), 2) == 0)
+        return 2;
+    if (strncmp((char *)&op, operation_to_string(OP_ADD), 1) == 0 || strncmp((char *)&op, operation_to_string(OP_SUBTRACT), 2) == 0)
+        return 1;
+
+    return 0;
+}
+
+PrecedenceIndicator get_precedence(CalcInput top, CalcInput incoming)
+{
+    if (precedence(top) >= precedence(incoming))
+    {
+        return HIGHER;
+    }
+    else
+    {
+        return LOWER;
+    }
 }

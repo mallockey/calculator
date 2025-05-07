@@ -2,7 +2,7 @@
 #define COMMON_H
 
 #include <stddef.h>
-#include <gtk/gtktypes.h>
+#include <gtk/gtk.h>
 
 typedef enum
 {
@@ -25,9 +25,19 @@ typedef enum
     NUM_9
 } CalcInput;
 
-typedef char *StackItem;
+typedef enum
+{
+    HIGHER,
+    LOWER
+} PrecedenceIndicator;
+
+typedef char StackItem;
 
 typedef StackItem *Stack;
+
+typedef char *OutputStackItem;
+
+typedef OutputStackItem *OutputStack; // An array of strings (dynamic stack)
 
 typedef struct
 {
@@ -38,19 +48,46 @@ typedef struct
 
 typedef struct
 {
-    CalcInput op;
-    CalcInput *current_op_ptr;
+    OutputStack stack;
+    size_t top;
+    size_t capacity;
+} OutputStackData;
+
+typedef struct
+{
     GtkWidget *running_formula;
-    StackData *output_data;
-    StackData *operation_data;
+    OutputStackData *output_stack;
+    StackData *operation_stack;
+    StackData *token_stack;
+    StackData *temp_num_stack;
 } OperationData;
+
+typedef struct
+{
+    GtkWidget *running_formula;
+    OutputStackData *output_stack;
+    StackData *operation_stack;
+    StackData *token_stack;
+    StackData *temp_num_stack;
+    char op;
+} ButtonClickHandlerParams;
 
 char *operation_to_string(CalcInput op);
 
-StackData create_operation_data(int size);
+StackData *create_stack(int size);
 
-StackData push(StackData operation_data, StackItem operator_stack_item);
+OutputStackData *create_output_stack(int size);
 
-StackItem pop(StackData operation_data);
+void push(StackData *stack_data, StackItem operator_stack_item);
+
+StackItem pop(StackData *stack_data);
+
+OutputStackItem pop_output_stack(OutputStackData *stack_data);
+
+void push_output_stack(OutputStackData *stack_data, const char *token);
+
+PrecedenceIndicator get_precedence(CalcInput top, CalcInput incoming);
+
+int precedence(CalcInput op);
 
 #endif
