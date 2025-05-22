@@ -8,9 +8,7 @@ void clear_calculator(GtkWidget *running_formula);
 
 int handle_button_click(GtkWidget *widget, gpointer user_data);
 
-// void set_current_operation(GtkWidget *widget, gpointer data);
-
-void calc_value(GtkWidget *entry, GtkWidget *sum_label);
+void handle_button_click_equals(GtkWidget *widget, gpointer user_data);
 
 void add_input(GtkWidget *container, const char *place_holder, GtkWidget *sum_label, GtkWidget *running_formula);
 

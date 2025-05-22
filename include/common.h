@@ -32,12 +32,13 @@ typedef enum
 } PrecedenceIndicator;
 
 typedef char StackItem;
-
 typedef StackItem *Stack;
 
 typedef char *OutputStackItem;
+typedef OutputStackItem *OutputStack;
 
-typedef OutputStackItem *OutputStack; // An array of strings (dynamic stack)
+typedef int EvalStackItem;
+typedef EvalStackItem *EvalStack;
 
 typedef struct
 {
@@ -55,20 +56,31 @@ typedef struct
 
 typedef struct
 {
+    EvalStack stack;
+    size_t top;
+    size_t capacity;
+} EvalStackData;
+
+typedef struct
+{
     GtkWidget *running_formula;
+    GtkWidget *sum;
     OutputStackData *output_stack;
     StackData *operation_stack;
-    StackData *token_stack;
+    OutputStackData *token_stack;
     StackData *temp_num_stack;
+    EvalStackData *eval_stack;
 } OperationData;
 
 typedef struct
 {
     GtkWidget *running_formula;
+    GtkWidget *sum;
     OutputStackData *output_stack;
     StackData *operation_stack;
-    StackData *token_stack;
+    OutputStackData *token_stack;
     StackData *temp_num_stack;
+    EvalStackData *eval_stack;
     char op;
 } ButtonClickHandlerParams;
 
@@ -78,6 +90,8 @@ StackData *create_stack(int size);
 
 OutputStackData *create_output_stack(int size);
 
+EvalStackData *create_eval_stack(int size);
+
 void push(StackData *stack_data, StackItem operator_stack_item);
 
 StackItem pop(StackData *stack_data);
@@ -85,6 +99,10 @@ StackItem pop(StackData *stack_data);
 OutputStackItem pop_output_stack(OutputStackData *stack_data);
 
 void push_output_stack(OutputStackData *stack_data, const char *token);
+
+EvalStackItem pop_eval_stack(EvalStackData *stack_data);
+
+void push_eval_stack(EvalStackData *stack_data, int token);
 
 PrecedenceIndicator get_precedence(CalcInput top, CalcInput incoming);
 

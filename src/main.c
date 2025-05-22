@@ -28,12 +28,16 @@ static void activate(GtkApplication *app, gpointer user_data)
 
     OperationData operation_data;
     running_formula = gtk_entry_new();
+    sum_label = gtk_label_new("0");
 
     operation_data.running_formula = running_formula;
+    operation_data.sum = sum_label;
     operation_data.operation_stack = create_stack(2);
     operation_data.output_stack = create_output_stack(2);
-    operation_data.token_stack = create_stack(2);
+    operation_data.token_stack = create_output_stack(2);
     operation_data.temp_num_stack = create_stack(2);
+    operation_data.temp_num_stack = create_stack(2);
+    operation_data.eval_stack = create_eval_stack(2);
 
     window = gtk_application_window_new(app);
     gtk_window_set_title(GTK_WINDOW(window), "Calculator");
@@ -82,6 +86,7 @@ static void activate(GtkApplication *app, gpointer user_data)
     box3 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_box_pack_start(GTK_BOX(left_side_child_box), box3, FALSE, FALSE, 0);
 
+    add_operation_button(box3, NUM_0, &operation_data);
     add_operation_button(box3, NUM_1, &operation_data);
     add_operation_button(box3, NUM_2, &operation_data);
     add_operation_button(box3, NUM_3, &operation_data);
