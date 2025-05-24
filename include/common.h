@@ -1,8 +1,11 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include <stddef.h>
 #include <gtk/gtk.h>
+#include <stdbool.h>
+#include <stddef.h>
+
+#include <stack.h>
 
 typedef enum
 {
@@ -31,36 +34,6 @@ typedef enum
     LOWER
 } PrecedenceIndicator;
 
-typedef char StackItem;
-typedef StackItem *Stack;
-
-typedef char *OutputStackItem;
-typedef OutputStackItem *OutputStack;
-
-typedef int EvalStackItem;
-typedef EvalStackItem *EvalStack;
-
-typedef struct
-{
-    Stack stack;
-    size_t top;
-    size_t capacity;
-} StackData;
-
-typedef struct
-{
-    OutputStack stack;
-    size_t top;
-    size_t capacity;
-} OutputStackData;
-
-typedef struct
-{
-    EvalStack stack;
-    size_t top;
-    size_t capacity;
-} EvalStackData;
-
 typedef struct
 {
     GtkWidget *running_formula;
@@ -86,26 +59,10 @@ typedef struct
 
 char *operation_to_string(CalcInput op);
 
-StackData *create_stack(int size);
-
-OutputStackData *create_output_stack(int size);
-
-EvalStackData *create_eval_stack(int size);
-
-void push(StackData *stack_data, StackItem operator_stack_item);
-
-StackItem pop(StackData *stack_data);
-
-OutputStackItem pop_output_stack(OutputStackData *stack_data);
-
-void push_output_stack(OutputStackData *stack_data, const char *token);
-
-EvalStackItem pop_eval_stack(EvalStackData *stack_data);
-
-void push_eval_stack(EvalStackData *stack_data, int token);
-
 PrecedenceIndicator get_precedence(CalcInput top, CalcInput incoming);
 
 int precedence(CalcInput op);
+
+bool is_number(const char *str);
 
 #endif

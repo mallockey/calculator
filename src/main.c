@@ -3,13 +3,7 @@
 
 #include <common.h>
 #include <calculator.h>
-
-static GtkWidget *sum_label;
-static GtkWidget *running_formula;
-
-static float running_sum = 0;
-
-static CalcInput current_operation = OP_NONE;
+#include <stack.h>
 
 static void activate(GtkApplication *app, gpointer user_data)
 {
@@ -24,6 +18,9 @@ static void activate(GtkApplication *app, gpointer user_data)
     GtkWidget *left_side_child_box;
     GtkWidget *right_side_child_box;
 
+    GtkWidget *sum_label;
+    GtkWidget *running_formula;
+
     GtkWidget *operations_box;
 
     OperationData operation_data;
@@ -32,10 +29,10 @@ static void activate(GtkApplication *app, gpointer user_data)
 
     operation_data.running_formula = running_formula;
     operation_data.sum = sum_label;
+
     operation_data.operation_stack = create_stack(2);
     operation_data.output_stack = create_output_stack(2);
     operation_data.token_stack = create_output_stack(2);
-    operation_data.temp_num_stack = create_stack(2);
     operation_data.temp_num_stack = create_stack(2);
     operation_data.eval_stack = create_eval_stack(2);
 
@@ -93,7 +90,7 @@ static void activate(GtkApplication *app, gpointer user_data)
 
     clear_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_box_pack_start(GTK_BOX(right_side_child_box), clear_box, FALSE, FALSE, 0);
-    add_clear_button(clear_box, running_formula);
+    add_clear_button(clear_box, &operation_data);
 
     operations_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_box_pack_start(GTK_BOX(right_side_child_box), operations_box, FALSE, FALSE, 0);
@@ -111,8 +108,7 @@ static void activate(GtkApplication *app, gpointer user_data)
     // free(operation_data.output_stack);
     // free(operation_data.temp_num_stack);
     // free(operation_data.token_stack);
-    // free(output_data.stack);
-    // free(operation_data.stack);
+    // free(operation_data.eval_stack);
 }
 
 int main(int argc, char **argv)

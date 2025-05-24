@@ -2,28 +2,30 @@
 #include <stdbool.h>
 #include <common.h>
 #include <ctype.h>
+#include <stack.h>
 
 void clear_calculator(GtkWidget *widget, gpointer user_data)
 {
-  GtkWidget *running_formula = GTK_WIDGET(user_data);
-  gtk_entry_set_text(GTK_ENTRY(running_formula), "");
-}
+  ButtonClickHandlerParams *data = (ButtonClickHandlerParams *)user_data;
 
-bool is_number(const char *str)
-{
-  if (str == NULL || *str == '\0')
+  for (int i = 0; i < data->output_stack->top; i++)
   {
-    return false;
+    free(data->output_stack->stack[i]);
   }
 
-  for (int i = 0; str[i] != '\0'; i++)
+  for (int i = 0; i < data->token_stack->top; i++)
   {
-    if (!isdigit(str[i]))
-    {
-      return false;
-    }
+    free(data->token_stack->stack[i]);
   }
-  return true;
+
+  data->eval_stack->top = 0;
+  data->operation_stack->top = 0;
+  data->output_stack->top = 0;
+  data->token_stack->top = 0;
+  data->temp_num_stack->top = 0;
+
+  gtk_label_set_text(GTK_LABEL(data->sum), "0");
+  gtk_entry_set_text(GTK_ENTRY(data->running_formula), "");
 }
 
 CalcInput convert_stack_item_to_calc_input(StackItem stack_item)
@@ -41,15 +43,16 @@ CalcInput convert_stack_item_to_calc_input(StackItem stack_item)
   {
     return OP_DIVIDE;
   }
-  else
+  else if (strncmp(temp, "*", 1) == 0)
   {
     return OP_MULTIPLY;
   }
+
+  return OP_NONE;
 }
 
 CalcInput convert_output_stack_item_to_calc_input(OutputStackItem stack_item)
 {
-
   if (strncmp(stack_item, "+", 1) == 0)
   {
     return OP_ADD;
@@ -62,16 +65,18 @@ CalcInput convert_output_stack_item_to_calc_input(OutputStackItem stack_item)
   {
     return OP_DIVIDE;
   }
-  else
+  else if (strncmp(stack_item, "*", 1) == 0)
   {
     return OP_MULTIPLY;
   }
+  return OP_NONE;
 }
 
 void handle_button_click_equals(GtkWidget *widget, gpointer user_data)
 {
   ButtonClickHandlerParams *data = (ButtonClickHandlerParams *)user_data;
 
+  // Push any remaining numbers on the temp_num_stack to the token stack
   if (data->temp_num_stack->top > 0)
   {
     char dest[100];
@@ -96,13 +101,23 @@ void handle_button_click_equals(GtkWidget *widget, gpointer user_data)
     {
 
       StackItem top = data->operation_stack->stack[data->operation_stack->top - 1];
-      while (data->operation_stack->top > 0 && get_precedence(convert_stack_item_to_calc_input(top), convert_output_stack_item_to_calc_input(current_token)) == HIGHER)
+
+      while (data->operation_stack->top > 0 &&
+             get_precedence(convert_stack_item_to_calc_input(top),
+                            convert_output_stack_item_to_calc_input(current_token)) == HIGHER)
+
       {
+
         StackItem popped = pop(data->operation_stack);
         char *op_copy = malloc(2);
         op_copy[0] = popped;
         op_copy[1] = '\0';
         push_output_stack(data->output_stack, op_copy);
+
+        if (data->operation_stack->top > 0)
+        {
+          top = data->operation_stack->stack[data->operation_stack->top - 1];
+        }
       }
 
       push(data->operation_stack, current_token[0]);
@@ -128,43 +143,60 @@ void handle_button_click_equals(GtkWidget *widget, gpointer user_data)
     }
     else
     {
-      EvalStackItem popped1 = pop_eval_stack(data->eval_stack);
-      EvalStackItem popped2 = pop_eval_stack(data->eval_stack);
+      if (data->eval_stack->top > 1)
+      {
+        EvalStackItem popped1 = pop_eval_stack(data->eval_stack);
+        EvalStackItem popped2 = pop_eval_stack(data->eval_stack);
 
-      double result = 0;
+        double result = 0;
 
-      if (strncmp(current_item, "+", 1) == 0)
-      {
-        result = popped2 + popped1;
-      }
-      else if (strncmp(current_item, "-", 1) == 0)
-      {
-        result = popped2 - popped1;
-      }
-      else if (strncmp(current_item, "/", 1) == 0)
-      {
-        result = popped2 / popped1;
-      }
-      else if (strncmp(current_item, "*", 1) == 0)
-      {
-        result = popped2 * popped1;
-      }
+        if (strncmp(current_item, "+", 1) == 0)
+        {
+          result = popped2 + popped1;
+        }
+        else if (strncmp(current_item, "-", 1) == 0)
+        {
+          result = popped2 - popped1;
+        }
+        else if (strncmp(current_item, "/", 1) == 0)
+        {
+          result = popped2 / popped1;
+        }
+        else if (strncmp(current_item, "*", 1) == 0)
+        {
+          result = popped2 * popped1;
+        }
 
-      push_eval_stack(data->eval_stack, result);
+        push_eval_stack(data->eval_stack, result);
+      }
     }
   }
 
-  char updated_text[128] = "SEGMENTATION FAULT";
-
   char str[20];
-  sprintf(str, "%d", (int)data->eval_stack->stack[0]); // cast to int if needed
+  sprintf(str, "%d", (int)data->eval_stack->stack[0]);
   gtk_label_set_text(GTK_LABEL(data->sum), str);
 
-  // for (int i = 0; i < data->eval_stack->top; i++)
-  // {
-  //   printf("The Sum is: %d\n", data->eval_stack->stack[i]);
-  // }
-  // gtk_entry_set_text(GTK_ENTRY(data->running_formula), updated_text);
+  for (int i = 0; i < strlen(str); i++)
+  {
+    push(data->temp_num_stack, str[i]);
+  }
+
+  for (int i = 0; i < data->output_stack->top; i++)
+  {
+    free(data->output_stack->stack[i]);
+  }
+
+  for (int i = 0; i < data->token_stack->top; i++)
+  {
+    free(data->token_stack->stack[i]);
+  }
+
+  data->eval_stack->top = 0;
+  data->operation_stack->top = 0;
+  data->output_stack->top = 0;
+  data->token_stack->top = 0;
+
+  gtk_entry_set_text(GTK_ENTRY(data->running_formula), str);
 }
 
 int handle_button_click(GtkWidget *widget, gpointer user_data)
@@ -222,8 +254,28 @@ int handle_button_click(GtkWidget *widget, gpointer user_data)
 
   if (should_remove)
   {
+    if (data->temp_num_stack->top > 0)
+    {
+      pop(data->temp_num_stack);
+    }
+
+    if (data->token_stack->top > 0)
+    {
+      pop_output_stack(data->token_stack);
+    }
+
+    // Just copy the modified current_text into updated_text
     strcpy(updated_text, current_text);
-    pop(data->temp_num_stack);
+
+    size_t len = strlen(updated_text);
+    if (len > 0)
+    {
+      updated_text[len - 1] = '\0';
+    }
+
+    gtk_entry_set_text(GTK_ENTRY(data->running_formula), updated_text);
+
+    return 0;
   }
 
   snprintf(updated_text, sizeof(updated_text), "%s%s", current_text, text_to_add);
@@ -267,7 +319,7 @@ void add_input(GtkWidget *container, const char *place_holder, GtkWidget *sum_la
   gtk_container_add(GTK_CONTAINER(container), running_formula);
 }
 
-void add_clear_button(GtkWidget *container, GtkWidget *running_formula)
+void add_clear_button(GtkWidget *container, OperationData *data)
 {
   GtkWidget *button;
   GtkWidget *button_box;
@@ -275,11 +327,26 @@ void add_clear_button(GtkWidget *container, GtkWidget *running_formula)
   button = gtk_button_new_with_label("Clear");
   button_box = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
 
+  ButtonClickHandlerParams *button_handle_click = malloc(sizeof(ButtonClickHandlerParams));
+  if (!button_handle_click)
+  {
+    fprintf(stderr, "Failed to allocate ButtonClickHandlerParams\n");
+    return;
+  }
+
+  button_handle_click->operation_stack = data->operation_stack;
+  button_handle_click->output_stack = data->output_stack;
+  button_handle_click->running_formula = data->running_formula;
+  button_handle_click->temp_num_stack = data->temp_num_stack;
+  button_handle_click->token_stack = data->token_stack;
+  button_handle_click->eval_stack = data->eval_stack;
+  button_handle_click->sum = data->sum;
+
   // Add the button to the button box
   gtk_container_add(GTK_CONTAINER(button_box), button);
 
   // Connect signals to the button
-  g_signal_connect(button, "clicked", G_CALLBACK(clear_calculator), running_formula);
+  g_signal_connect(button, "clicked", G_CALLBACK(clear_calculator), button_handle_click);
 
   // Add the button box to the container (GtkBox)
   gtk_container_add(GTK_CONTAINER(container), button_box);
@@ -294,7 +361,7 @@ void add_operation_button(GtkWidget *container, CalcInput op, OperationData *dat
   button = gtk_button_new_with_label(operation_label);
   button_box = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
   gtk_container_add(GTK_CONTAINER(button_box), button);
-  gtk_container_add(GTK_CONTAINER(container), button_box); // don't forget to pack the button box!
+  gtk_container_add(GTK_CONTAINER(container), button_box);
 
   ButtonClickHandlerParams *button_handle_click = malloc(sizeof(ButtonClickHandlerParams));
   if (!button_handle_click)
