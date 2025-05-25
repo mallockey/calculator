@@ -387,6 +387,4 @@ void add_operation_button(GtkWidget *container, CalcInput op, OperationData *dat
   {
     g_signal_connect(button, "clicked", G_CALLBACK(handle_button_click), button_handle_click);
   }
-
-  free(button_handle_click);
 }
