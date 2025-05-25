@@ -314,9 +314,11 @@ int handle_button_click(GtkWidget *widget, gpointer user_data)
 
 void add_input(GtkWidget *container, const char *place_holder, GtkWidget *sum_label, GtkWidget *running_formula)
 {
-  gtk_entry_set_placeholder_text(GTK_ENTRY(running_formula), "Type here...");
+  gtk_entry_set_placeholder_text(GTK_ENTRY(running_formula), "");
   gtk_container_add(GTK_CONTAINER(container), sum_label);
   gtk_container_add(GTK_CONTAINER(container), running_formula);
+  gtk_editable_set_editable(running_formula, false);
+  gtk_widget_set_can_focus(running_formula, false);
 }
 
 void add_clear_button(GtkWidget *container, OperationData *data)
