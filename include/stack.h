@@ -51,4 +51,10 @@ EvalStackItem pop_eval_stack(EvalStackData *stack_data);
 
 OutputStackItem pop_output_stack(OutputStackData *stack_data);
 
+void free_stack(StackData *stack_data);
+
+void free_output_stack(OutputStackData *stack_data);
+
+void free_eval_stack(EvalStackData *stack_data);
+
 #endif

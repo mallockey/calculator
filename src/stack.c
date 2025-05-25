@@ -128,3 +128,42 @@ OutputStackItem pop_output_stack(OutputStackData *stack_data)
 
     return item;
 }
+
+void free_stack(StackData *stack_data)
+{
+    if (stack_data == NULL)
+        return;
+
+    if (stack_data->stack != NULL)
+    {
+        free(stack_data->stack); // Free the array of chars
+    }
+
+    free(stack_data); // Free the struct
+}
+
+void free_output_stack(OutputStackData *stack_data)
+{
+    if (stack_data == NULL)
+        return;
+
+    if (stack_data->stack != NULL)
+    {
+        free(stack_data->stack);
+    }
+
+    free(stack_data);
+}
+
+void free_eval_stack(EvalStackData *stack_data)
+{
+    if (stack_data == NULL)
+        return;
+
+    if (stack_data->stack != NULL)
+    {
+        free(stack_data->stack);
+    }
+
+    free(stack_data);
+}

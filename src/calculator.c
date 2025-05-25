@@ -81,7 +81,8 @@ void handle_button_click_equals(GtkWidget *widget, gpointer user_data)
   {
     char dest[100];
 
-    memcpy(dest, data->temp_num_stack->stack, data->temp_num_stack->top);
+    memcpy(dest, data->temp_num_stack->stack, data->temp_num_stack->top * sizeof(int));
+
     dest[data->temp_num_stack->top] = '\0';
 
     data->temp_num_stack->top = 0;
@@ -314,7 +315,6 @@ int handle_button_click(GtkWidget *widget, gpointer user_data)
 void add_input(GtkWidget *container, const char *place_holder, GtkWidget *sum_label, GtkWidget *running_formula)
 {
   gtk_entry_set_placeholder_text(GTK_ENTRY(running_formula), "Type here...");
-  // g_signal_connect(running_formula, "activate", G_CALLBACK(calc_value), sum_label);
   gtk_container_add(GTK_CONTAINER(container), sum_label);
   gtk_container_add(GTK_CONTAINER(container), running_formula);
 }
@@ -323,7 +323,6 @@ void add_clear_button(GtkWidget *container, OperationData *data)
 {
   GtkWidget *button;
   GtkWidget *button_box;
-  // Create a button and a button box
   button = gtk_button_new_with_label("Clear");
   button_box = gtk_button_box_new(GTK_ORIENTATION_HORIZONTAL);
 
@@ -388,4 +387,6 @@ void add_operation_button(GtkWidget *container, CalcInput op, OperationData *dat
   {
     g_signal_connect(button, "clicked", G_CALLBACK(handle_button_click), button_handle_click);
   }
+
+  free(button_handle_click);
 }
